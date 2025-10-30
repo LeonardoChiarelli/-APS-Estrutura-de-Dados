@@ -1,5 +1,3 @@
-// Compilar: gcc -std=c11 -O2 -o sort_compare_detailed sort_compare_detailed.c
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,9 +5,9 @@
 
 // Métricas separadas por tipo
 typedef struct {
-    unsigned long long comparisons; 
-    unsigned long long swaps;      
-    unsigned long long copies;
+    unsigned long long comparisons; // todas comparações (if, <=, <, > usadas para decidir)
+    unsigned long long swaps;       // quantas trocas/swaps foram realizadas
+    unsigned long long copies;      // atribuições/cópias (cópia para aux, atribuição direta)
     double cpu_seconds;
 } Metrics;
 
@@ -54,8 +52,8 @@ void selection_sort(int* v, size_t n, Metrics* m) {
             int tmp = v[i];
             v[i] = v[min];
             v[min] = tmp;
-            m->swaps++;
-            m->copies += 3;
+            m->swaps++;       // contamos a troca como 1 swap
+            m->copies += 3;   // opcionalmente também contamos as 3 atribuições como cópias
         }
     }
     clock_t end = clock();

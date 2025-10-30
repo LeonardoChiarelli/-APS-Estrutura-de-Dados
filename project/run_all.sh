@@ -1,31 +1,68 @@
-REPEATS=5
-BIN="./sort_compare_detailed"
-INPUT_DIR="./inputs"
-OUT_CSV="results_compare_detailed.csv"
+#!/bin/bash
 
-if [ ! -x "$BIN" ]; then
-  echo "Erro: binário $BIN não encontrado ou não executável. Compile antes."
-  exit 1
+# --------------------------------------------------------
+# Executa automaticamente todas as ordenações e gera CSV
+# --------------------------------------------------------
+
+SOURCE="sort_compare_detailed.c"
+EXEC="./sort_compare_detailed"
+OUTPUT_DIR="resultados"
+INPUT_SCRIPT="./gerar_input.sh"
+
+echo "🔄 Gerando novos dados de entrada..."
+if [ -f "$INPUT_SCRIPT" ]; then
+  bash "$INPUT_SCRIPT"
+else
+  echo "⚠️  Script $INPUT_SCRIPT não encontrado. Pulei esta etapa."
+fi
+echo "✅ Dados gerados!"
+
+# Converte quebras de linha (evita erro $'\r')
+if grep -q $'\r' "$SOURCE"; then
+  echo "🧹 Corrigindo quebras de linha estilo Windows..."
+  dos2unix "$SOURCE"
 fi
 
-if [ ! -d "$INPUT_DIR" ]; then
-  echo "Erro: pasta $INPUT_DIR não encontrada. Crie e coloque seus arquivos .txt lá."
+# Compila o programa em C
+echo "🔧 Compilando programa..."
+gcc "$SOURCE" -o "$EXEC" -O2 -Wall
+if [ $? -ne 0 ]; then
+  echo "❌ Erro na compilação!"
   exit 1
 fi
+echo "✅ Compilação concluída!"
 
-# header CSV
-echo "n,sel_comp,sel_swaps,sel_copies,sel_cpu,mer_comp,mer_swaps,mer_copies,mer_cpu,heap_comp,heap_swaps,heap_copies,heap_cpu,filename" > "$OUT_CSV"
+# Cria diretório de resultados
+mkdir -p "$OUTPUT_DIR"
 
-for file in "$INPUT_DIR"/*.txt; do
-  [ -e "$file" ] || continue
-  echo "=== Testando: $file ==="
-  for i in $(seq 1 $REPEATS); do
-    echo "Run $i / $REPEATS"
-    $BIN "$file"
-  done
+# Remove CSV antigo se existir
+if [ -f results_compare_detailed.csv ]; then
+  mv results_compare_detailed.csv "$OUTPUT_DIR/results_compare_detailed_$(date +%H%M%S).csv"
+fi
+
+# Função para executar cada input
+run_test() {
+  local input=$1
+  echo "🚀 Rodando com $input ..."
+  $EXEC "$input"
+  echo "📊 Execução concluída para $input"
+}
+
+# Executa os 3 arquivos de input
+for input in inputs/input1.txt inputs/input2.txt inputs/input3.txt; do
+  if [ -f "$input" ]; then
+    run_test "$input"
+  else
+    echo "⚠️  Arquivo $input não encontrado — pulando."
+  fi
 done
 
-echo "Execuções concluídas. CSV: $OUT_CSV"
-echo "Gerando relatório (aggregate_and_report.py)..."
-python3 aggregate_and_report.py "$OUT_CSV"
-echo "Relatório gerado: report.pdf (veja saída do script Python)"
+# Move CSV final para pasta de resultados
+if [ -f results_compare_detailed.csv ]; then
+  mv results_compare_detailed.csv "$OUTPUT_DIR/results_compare_detailed.csv"
+  echo "✅ CSV final salvo em $OUTPUT_DIR/results_compare_detailed.csv"
+else
+  echo "⚠️ Nenhum CSV encontrado."
+fi
+
+echo "🏁 Execuções concluídas!"
