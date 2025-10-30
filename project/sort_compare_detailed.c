@@ -3,11 +3,10 @@
 #include <string.h>
 #include <time.h>
 
-// Métricas separadas por tipo
 typedef struct {
-    unsigned long long comparisons; // todas comparações (if, <=, <, > usadas para decidir)
-    unsigned long long swaps;       // quantas trocas/swaps foram realizadas
-    unsigned long long copies;      // atribuições/cópias (cópia para aux, atribuição direta)
+    unsigned long long comparisons;
+    unsigned long long swaps;
+    unsigned long long copies;
     double cpu_seconds;
 } Metrics;
 
@@ -52,8 +51,8 @@ void selection_sort(int* v, size_t n, Metrics* m) {
             int tmp = v[i];
             v[i] = v[min];
             v[min] = tmp;
-            m->swaps++;       // contamos a troca como 1 swap
-            m->copies += 3;   // opcionalmente também contamos as 3 atribuições como cópias
+            m->swaps++;
+            m->copies += 3;
         }
     }
     clock_t end = clock();
@@ -159,34 +158,22 @@ int main(int argc, char** argv) {
 
     Metrics m_sel = {0}, m_mer = {0}, m_heap = {0};
 
-    // executa
     selection_sort(v_sel, n, &m_sel);
     merge_sort(v_mer, n, &m_mer);
     heap_sort(v_heap, n, &m_heap);
 
-    // imprime resumo na saída
-    printf("n=%zu\n", n);
-    printf("Selection: comp=%llu swaps=%llu copies=%llu cpu=%.6fs\n",
-           m_sel.comparisons, m_sel.swaps, m_sel.copies, m_sel.cpu_seconds);
-    printf("Merge:     comp=%llu swaps=%llu copies=%llu cpu=%.6fs\n",
-           m_mer.comparisons, m_mer.swaps, m_mer.copies, m_mer.cpu_seconds);
-    printf("Heap:      comp=%llu swaps=%llu copies=%llu cpu=%.6fs\n",
-           m_heap.comparisons, m_heap.swaps, m_heap.copies, m_heap.cpu_seconds);
+    printf("Resultados para n=%zu (Arquivo: %s)\n", n, argv[1]);
+    printf("----------------------------------------------------------------------------------------\n");
+    printf("Algoritmo   | Comparações     | Trocas (Swaps) | Cópias (Copies) | Tempo (CPU)\n");
+    printf("----------------------------------------------------------------------------------------\n");
+    printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
+           "Selection", m_sel.comparisons, m_sel.swaps, m_sel.copies, m_sel.cpu_seconds);
+    printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
+           "Merge", m_mer.comparisons, m_mer.swaps, m_mer.copies, m_mer.cpu_seconds);
+    printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
+           "Heap", m_heap.comparisons, m_heap.swaps, m_heap.copies, m_heap.cpu_seconds);
+    printf("----------------------------------------------------------------------------------------\n");
 
-    // grava CSV (append). Header:
-    // n,sel_comp,sel_swaps,sel_copies,sel_cpu,mer_comp,mer_swaps,mer_copies,mer_cpu,heap_comp,heap_swaps,heap_copies,heap_cpu,filename
-    FILE* csv = fopen("results_compare_detailed.csv", "a");
-    if (csv) {
-        fprintf(csv, "%zu,%llu,%llu,%llu,%.6f,%llu,%llu,%llu,%.6f,%llu,%llu,%llu,%.6f,%s\n",
-                n,
-                m_sel.comparisons, m_sel.swaps, m_sel.copies, m_sel.cpu_seconds,
-                m_mer.comparisons, m_mer.swaps, m_mer.copies, m_mer.cpu_seconds,
-                m_heap.comparisons, m_heap.swaps, m_heap.copies, m_heap.cpu_seconds,
-                argv[1]);
-        fclose(csv);
-    } else {
-        fprintf(stderr,"Não foi possível abrir results_compare_detailed.csv para escrita\n");
-    }
 
     free(original); free(v_sel); free(v_mer); free(v_heap);
     return EXIT_SUCCESS;
