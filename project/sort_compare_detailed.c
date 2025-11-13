@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <sys/stat.h>
+#include <sys/types.h> 
 
 typedef struct {
     unsigned long long comparisons;
@@ -137,7 +139,6 @@ void heap_sort(int* v, size_t n, Metrics* m) {
     m->cpu_seconds = (double)(end - start) / CLOCKS_PER_SEC;
 }
 
-/* ================= util ================= */
 void print_array(const int* v, size_t n) {
     for (size_t i = 0; i < n; ++i) {
         printf("%d", v[i]);
@@ -145,6 +146,19 @@ void print_array(const int* v, size_t n) {
     }
     printf("\n");
 }
+
+void write_array_to_file(const char* filename, const int* v, size_t n) {
+    FILE* f = fopen(filename, "w");
+    if (!f) {
+        fprintf(stderr, "AVISO: Não foi possível criar o arquivo de saída '%s'\n", filename);
+        return;
+    }
+    for (size_t i = 0; i < n; ++i) {
+        fprintf(f, "%d\n", v[i]);
+    }
+    fclose(f);
+}
+
 
 int main(int argc, char** argv) {
     if (argc < 2) { fprintf(stderr, "Uso: %s <arquivo_de_entrada>\n", argv[0]); return EXIT_FAILURE; }
@@ -162,16 +176,34 @@ int main(int argc, char** argv) {
     merge_sort(v_mer, n, &m_mer);
     heap_sort(v_heap, n, &m_heap);
 
+    const char* base_filename = strrchr(argv[1], '/');
+    base_filename = (base_filename ? base_filename + 1 : argv[1]); 
+
+    char out_filename[1024]; 
+
+    printf("💾 Salvando arrays ordenados em 'resultado/<subpasta>/'...\n");
+    
+    snprintf(out_filename, sizeof(out_filename), "resultado/selection/selection_%s", base_filename);
+    write_array_to_file(out_filename, v_sel, n);
+    
+    snprintf(out_filename, sizeof(out_filename), "resultado/merge/merge_%s", base_filename);
+    write_array_to_file(out_filename, v_mer, n);
+    
+    snprintf(out_filename, sizeof(out_filename), "resultado/heap/heap_%s", base_filename);
+    write_array_to_file(out_filename, v_heap, n);
+    
+    printf("✅ Arquivos salvos!\n\n");
+
     printf("Resultados para n=%zu (Arquivo: %s)\n", n, argv[1]);
     printf("----------------------------------------------------------------------------------------\n");
     printf("Algoritmo   | Comparações     | Trocas (Swaps) | Cópias (Copies) | Tempo (CPU)\n");
     printf("----------------------------------------------------------------------------------------\n");
     printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
-           "Selection", m_sel.comparisons, m_sel.swaps, m_sel.copies, m_sel.cpu_seconds);
+             "Selection", m_sel.comparisons, m_sel.swaps, m_sel.copies, m_sel.cpu_seconds);
     printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
-           "Merge", m_mer.comparisons, m_mer.swaps, m_mer.copies, m_mer.cpu_seconds);
+             "Merge", m_mer.comparisons, m_mer.swaps, m_mer.copies, m_mer.cpu_seconds);
     printf("%-11s | %-15llu | %-14llu | %-15llu | %.6fs\n",
-           "Heap", m_heap.comparisons, m_heap.swaps, m_heap.copies, m_heap.cpu_seconds);
+             "Heap", m_heap.comparisons, m_heap.swaps, m_heap.copies, m_heap.cpu_seconds);
     printf("----------------------------------------------------------------------------------------\n");
 
 

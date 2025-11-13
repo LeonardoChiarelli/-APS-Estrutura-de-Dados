@@ -1,20 +1,10 @@
 #!/bin/bash
 SOURCE="sort_compare_detailed.c"
 EXEC="./sort_compare_detailed"
-INPUT_SCRIPT="./gerar_input.sh"
 
 echo "========================================================"
-echo "          INICIANDO PROCESSO DE BENCHMARK"
+echo "           INICIANDO PROCESSO DE BENCHMARK"
 echo "========================================================"
-
-echo "🔄 Gerando novos dados de entrada..."
-if [ -f "$INPUT_SCRIPT" ]; then
-  bash "$INPUT_SCRIPT"
-else
-  echo "⚠️  Script $INPUT_SCRIPT não encontrado. Pulei esta etapa."
-fi
-echo "✅ Dados gerados!"
-echo ""
 
 if grep -q $'\r' "$SOURCE"; then
   echo "🧹 Corrigindo quebras de linha estilo Windows..."
@@ -22,12 +12,21 @@ if grep -q $'\r' "$SOURCE"; then
 fi
 
 echo "🔧 Compilando programa ($SOURCE)..."
-gcc "$SOURCE" -o "$EXEC" -O2 -Wall
+gcc "$SOURCE" -o "$EXEC" -O2 -Wall -lm
 if [ $? -ne 0 ]; then
   echo "❌ Erro na compilação!"
   exit 1
 fi
 echo "✅ Compilação concluída! ($EXEC)"
+echo ""
+
+echo "🧹 Preparando o diretório 'resultado'..."
+mkdir -p resultado
+rm -f resultado/*
+mkdir -p resultado/heap
+mkdir -p resultado/merge
+mkdir -p resultado/selection
+echo "✅ Diretório 'resultado' e subpastas estão prontos (e vazios)."
 echo ""
 
 run_test() {
@@ -39,7 +38,7 @@ run_test() {
   echo ""
 }
 
-for input in inputs/input1.txt inputs/input2.txt inputs/input3.txt; do
+for input in inputs/dtaleat100kdup0.txt inputs/dtaleat100kuni1.txt inputs/dtconcv100kdup2.txt; do
   if [ -f "$input" ]; then
     run_test "$input"
   else
