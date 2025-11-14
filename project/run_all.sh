@@ -22,7 +22,7 @@ echo ""
 
 echo "🧹 Preparando o diretório 'resultado'..."
 mkdir -p resultado
-rm -f resultado/*
+rm -rf resultado/*
 mkdir -p resultado/heap
 mkdir -p resultado/merge
 mkdir -p resultado/selection
